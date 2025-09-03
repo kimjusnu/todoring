@@ -22,7 +22,8 @@ export const Header = () => {
       window.location.href = "/onboarding";
     } catch (error) {
       console.error("Sign out error:", error);
-      alert("로그아웃 중 오류가 발생했습니다: " + error.message);
+      const errorMessage = error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.";
+      alert("로그아웃 중 오류가 발생했습니다: " + errorMessage);
     }
   };
 
