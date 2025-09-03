@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export const OnboardingPage = () => {
+const OnboardingPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const router = useRouter();
 
@@ -233,3 +233,5 @@ export const OnboardingPage = () => {
     </div>
   );
 };
+
+export default OnboardingPage;

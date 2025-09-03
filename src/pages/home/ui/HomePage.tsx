@@ -8,7 +8,7 @@ import { Calendar } from "@/widgets/calendar";
 import { DailyTodos } from "@/widgets/daily-todos";
 import { TodoModal } from "@/features/todo";
 
-export const HomePage = () => {
+const HomePage = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [todos, setTodos] = useState<Todo[]>([]);
   const [dailyTodos, setDailyTodos] = useState<Todo[]>([]);
@@ -345,3 +345,5 @@ export const HomePage = () => {
     </div>
   );
 };
+
+export default HomePage;

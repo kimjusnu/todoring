@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/shared/lib/AuthContext";
 
-export const LoginPage = () => {
+const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -530,3 +530,5 @@ export const LoginPage = () => {
     </div>
   );
 };
+
+export default LoginPage;
