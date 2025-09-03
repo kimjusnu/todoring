@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/shared/config/supabase";
+import type { User } from "@supabase/supabase-js";
 
 import { todoApi, type Todo } from "@/shared/api/todoApi";
 import { Calendar } from "@/widgets/calendar";
@@ -22,8 +24,33 @@ const HomePage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   const router = useRouter();
+
+  // 인증 상태 확인
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        setUser(user);
+
+        if (!user) {
+          router.push("/onboarding");
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+        router.push("/onboarding");
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
 
   const loadAllTodos = async () => {
     try {
@@ -89,13 +116,17 @@ const HomePage = () => {
 
   // 모든 Todo 데이터 로드
   useEffect(() => {
-    loadAllTodos();
-  }, []);
+    if (user) {
+      loadAllTodos();
+    }
+  }, [user]);
 
   // 선택된 날짜의 Todo 로드
   useEffect(() => {
-    loadDailyTodos(selectedDate);
-  }, [selectedDate]);
+    if (user) {
+      loadDailyTodos(selectedDate);
+    }
+  }, [user, selectedDate]);
 
   // 모달 새로고침 이벤트 리스너
   useEffect(() => {
@@ -224,6 +255,18 @@ const HomePage = () => {
       alert("할 일 삭제에 실패했습니다.");
     }
   };
+
+  // 인증 로딩 중이거나 로그인하지 않은 경우 로딩 표시
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

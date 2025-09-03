@@ -1,12 +1,65 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useAuth } from "@/shared/lib/AuthContext";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { supabase } from "@/shared/config/supabase";
+import type { User } from "@supabase/supabase-js";
 
 export const Header = () => {
-  const { user, profile, loading, signOut } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const pathname = usePathname();
+  const router = useRouter();
+
+  // 인증 상태 확인
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        setUser(user);
+
+        if (user) {
+          // 프로필 정보 로드
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .single();
+          setProfile(profileData);
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+
+    // 인증 상태 변화 감지
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+        setProfile(profileData);
+      } else {
+        setProfile(null);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // 온보딩과 로그인 페이지에서는 헤더 숨기기
   if (pathname === "/onboarding" || pathname === "/login") {
@@ -16,7 +69,9 @@ export const Header = () => {
   const handleSignOut = async () => {
     try {
       console.log("Starting sign out process...");
-      await signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
       console.log("Sign out completed successfully");
       // 로그아웃 후 온보딩 페이지로 강제 리다이렉트
       window.location.href = "/onboarding";
