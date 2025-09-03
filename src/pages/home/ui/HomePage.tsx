@@ -181,6 +181,8 @@ const HomePage = () => {
 
       setIsModalOpen(false);
       setEditingTodo(null);
+
+      // 성공 메시지는 모달이 닫히는 것으로 충분
     } catch (error) {
       console.error("Failed to save todo:", error);
       alert("할 일 저장에 실패했습니다.");

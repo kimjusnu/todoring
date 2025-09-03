@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { supabase } from "@/shared/config/supabase";
+import { useToast } from "@/shared/lib/ToastContext";
 import type { User } from "@supabase/supabase-js";
 
 export const Header = () => {
@@ -12,6 +13,7 @@ export const Header = () => {
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
+  const { addToast } = useToast();
 
   // 인증 상태 확인
   useEffect(() => {
@@ -81,7 +83,11 @@ export const Header = () => {
         error instanceof Error
           ? error.message
           : "알 수 없는 오류가 발생했습니다.";
-      alert("로그아웃 중 오류가 발생했습니다: " + errorMessage);
+      addToast({
+        type: "error",
+        title: "로그아웃 실패",
+        message: errorMessage,
+      });
     }
   };
 
