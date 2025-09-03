@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/shared/lib/AuthContext";
 import Link from "next/link";
 
@@ -9,10 +9,24 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const { resetPassword } = useAuth();
+  const [mounted, setMounted] = useState(false);
+  
+  // 클라이언트 사이드에서만 useAuth 사용
+  const auth = mounted ? useAuth() : null;
+  const resetPassword = auth?.resetPassword;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!resetPassword) {
+      setError("인증 시스템을 초기화하는 중입니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
+    
     setLoading(true);
     setError("");
     setMessage("");

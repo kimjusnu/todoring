@@ -12,11 +12,22 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const { updatePassword } = useAuth();
+  const [mounted, setMounted] = useState(false);
+  
+  // 클라이언트 사이드에서만 useAuth 사용
+  const auth = mounted ? useAuth() : null;
+  const updatePassword = auth?.updatePassword;
+  
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    
     // URL 파라미터에서 에러 확인
     const urlParams = new URLSearchParams(window.location.hash.substring(1));
     const error = urlParams.get("error");
@@ -93,6 +104,12 @@ export default function ResetPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!updatePassword) {
+      setError("인증 시스템을 초기화하는 중입니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
+    
     setLoading(true);
     setError("");
     setMessage("");
