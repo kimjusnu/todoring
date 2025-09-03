@@ -153,6 +153,14 @@ export const TodoModal = ({
     );
   };
 
+  // 로컬 시간 기준으로 날짜를 YYYY-MM-DD 형식으로 변환
+  const formatDateToLocal = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -179,7 +187,7 @@ export const TodoModal = ({
         // 기존 할일 수정
         await onSave({
           title: lines[0].trim(),
-          due_date: selectedDate.toISOString().split("T")[0],
+          due_date: formatDateToLocal(selectedDate),
           priority: editingTodo.priority || "medium",
           completed: editingTodo.completed,
         });
@@ -193,7 +201,7 @@ export const TodoModal = ({
         // 다중 할일 저장 - 각 줄을 개별 할일로 저장
         const todosToSave = lines.map((line) => ({
           title: line.trim(),
-          due_date: selectedDate.toISOString().split("T")[0],
+          due_date: formatDateToLocal(selectedDate),
           priority: "medium" as const,
           completed: false,
         }));

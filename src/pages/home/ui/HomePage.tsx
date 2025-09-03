@@ -93,11 +93,20 @@ const HomePage = () => {
     }
   };
 
+  // 로컬 시간 기준으로 날짜를 YYYY-MM-DD 형식으로 변환
+  const formatDateToLocal = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const loadDailyTodos = async (date: Date) => {
     try {
       setLoading(true);
-      // 날짜의 시작과 끝 시간으로 범위 검색하도록 수정 필요
-      const dateString = date.toISOString().split("T")[0];
+      // 로컬 시간 기준으로 날짜 변환
+      const dateString = formatDateToLocal(date);
+      console.log("Loading todos for date:", dateString, "from date:", date);
       const data = await todoApi.getTodosByDate(dateString);
       // 처음 올린 순서로 정렬 (created_at 기준 오름차순)
       const sortedData = data.sort(
