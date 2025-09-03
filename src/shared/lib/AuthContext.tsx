@@ -127,12 +127,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setTimeout(() => reject(new Error("SignOut timeout")), 5000)
       );
 
-      const { error } = await Promise.race([signOutPromise, timeoutPromise]);
-      console.log("AuthContext: signOut response:", { error });
+      const result = await Promise.race([signOutPromise, timeoutPromise]) as { error?: any };
+      console.log("AuthContext: signOut response:", result);
 
-      if (error) {
-        console.error("AuthContext: signOut error:", error);
-        throw error;
+      if (result?.error) {
+        console.error("AuthContext: signOut error:", result.error);
+        throw result.error;
       }
     } catch (error) {
       console.warn("AuthContext: signOut failed or timed out:", error);
