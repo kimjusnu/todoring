@@ -9,6 +9,7 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  error: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (
     email: string,
@@ -25,6 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // 초기 세션 확인
@@ -68,18 +70,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) {
-      // 로그인 실패는 정상적인 상황이므로 에러 레벨을 조정
-      if (error.message?.includes("Invalid login credentials")) {
-        console.log("Login failed: Invalid credentials");
-      } else {
-        console.error("SignIn error:", error);
+    try {
+      setError(null);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) {
+        // 로그인 실패는 정상적인 상황이므로 에러 레벨을 조정
+        if (error.message?.includes("Invalid login credentials")) {
+          console.log("Login failed: Invalid credentials");
+        } else {
+          console.error("SignIn error:", error);
+        }
+        setError(error.message);
+        throw error;
       }
-      throw error;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "로그인 중 오류가 발생했습니다."
+      );
+      throw err;
     }
   };
 
@@ -127,7 +138,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setTimeout(() => reject(new Error("SignOut timeout")), 5000)
       );
 
-      const result = await Promise.race([signOutPromise, timeoutPromise]) as { error?: any };
+      const result = (await Promise.race([signOutPromise, timeoutPromise])) as {
+        error?: any;
+      };
       console.log("AuthContext: signOut response:", result);
 
       if (result?.error) {
@@ -162,13 +175,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error;
     }
 
-    return data;
+    // void를 반환하도록 수정
+    return;
   };
 
   const value = {
     user,
     profile,
     loading,
+    error,
     signIn,
     signUp,
     signOut,

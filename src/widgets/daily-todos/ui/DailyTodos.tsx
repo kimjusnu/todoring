@@ -229,14 +229,6 @@ export const DailyTodos = ({
                       {getPriorityLabel(todo.priority || "medium")}
                     </span>
                   </div>
-                  {todo.description && (
-                    <p
-                      className="text-sm line-clamp-2"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      {todo.description}
-                    </p>
-                  )}
                 </div>
 
                 {/* 액션 버튼들 */}

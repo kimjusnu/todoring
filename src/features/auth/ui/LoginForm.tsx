@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/entities/user";
+import { useAuth } from "@/shared/lib/AuthContext";
 
 export const LoginForm = () => {
   const [email, setEmail] = useState("");

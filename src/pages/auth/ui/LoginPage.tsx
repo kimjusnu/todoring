@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/shared/lib/AuthContext";
+import { supabase } from "@/shared/config/supabase";
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -21,7 +21,7 @@ const LoginPage = () => {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
-  const { user, signIn, signUp, resendEmail } = useAuth();
+  const [user, setUser] = useState(null);
   const router = useRouter();
 
   // 이미 로그인된 사용자는 홈으로 리다이렉트
@@ -73,20 +73,36 @@ const LoginPage = () => {
 
     try {
       if (isLogin) {
-        await signIn(email, password);
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+
         // 로그인 성공 시 실패 횟수 초기화
         setFailedAttempts(0);
         router.push("/");
       } else {
-        const signUpResult = await signUp(email, password, fullName.trim());
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName.trim(),
+            },
+          },
+        });
+
+        if (error) throw error;
 
         // 회원가입 결과에 따라 다른 메시지 표시
-        if (signUpResult?.user && !signUpResult?.session) {
+        if (data?.user && !data?.session) {
           setSuccessMessage(
             "회원가입이 완료되었습니다! 이메일을 확인하여 계정을 활성화해주세요."
           );
           setLastSignupEmail(email); // 재발송을 위해 이메일 저장
-        } else if (signUpResult?.session) {
+        } else if (data?.session) {
           setSuccessMessage(
             "회원가입이 완료되었습니다! 자동으로 로그인되었습니다."
           );
@@ -169,7 +185,13 @@ const LoginPage = () => {
     setError("");
 
     try {
-      await resendEmail(lastSignupEmail);
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: lastSignupEmail,
+      });
+
+      if (error) throw error;
+
       setSuccessMessage(
         "인증 이메일을 다시 발송했습니다! 이메일을 확인해주세요."
       );

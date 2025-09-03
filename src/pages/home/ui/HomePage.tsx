@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/shared/lib/AuthContext";
+
 import { todoApi, type Todo } from "@/shared/api/todoApi";
 import { Calendar } from "@/widgets/calendar";
 import { DailyTodos } from "@/widgets/daily-todos";
@@ -23,7 +23,6 @@ const HomePage = () => {
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const { user, profile, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const loadAllTodos = async () => {
@@ -90,17 +89,13 @@ const HomePage = () => {
 
   // 모든 Todo 데이터 로드
   useEffect(() => {
-    if (user) {
-      loadAllTodos();
-    }
-  }, [user]);
+    loadAllTodos();
+  }, []);
 
   // 선택된 날짜의 Todo 로드
   useEffect(() => {
-    if (user) {
-      loadDailyTodos(selectedDate);
-    }
-  }, [user, selectedDate]);
+    loadDailyTodos(selectedDate);
+  }, [selectedDate]);
 
   // 모달 새로고침 이벤트 리스너
   useEffect(() => {
@@ -111,25 +106,6 @@ const HomePage = () => {
     window.addEventListener("refreshModal", handleRefreshModal);
     return () => window.removeEventListener("refreshModal", handleRefreshModal);
   }, []);
-
-  // 로그인하지 않은 사용자는 온보딩 페이지로 리다이렉트
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/onboarding");
-    }
-  }, [user, authLoading, router]);
-
-  // 인증 로딩 중이거나 로그인하지 않은 경우 로딩 표시
-  if (authLoading || !user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">로딩 중...</p>
-        </div>
-      </div>
-    );
-  }
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
