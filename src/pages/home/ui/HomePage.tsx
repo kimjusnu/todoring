@@ -137,15 +137,7 @@ const HomePage = () => {
     }
   }, [user, selectedDate]);
 
-  // 모달 새로고침 이벤트 리스너
-  useEffect(() => {
-    const handleRefreshModal = () => {
-      setIsModalOpen(true);
-    };
-
-    window.addEventListener("refreshModal", handleRefreshModal);
-    return () => window.removeEventListener("refreshModal", handleRefreshModal);
-  }, []);
+  // 모달 새로고침 이벤트 리스너 제거 - 할일 추가 후 모달이 다시 열리는 문제 해결
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
@@ -164,6 +156,12 @@ const HomePage = () => {
   };
 
   const handleEditTodo = (todo: Todo) => {
+    // 친구의 일정은 수정할 수 없음
+    if (todo.is_own_todo === false) {
+      alert("친구의 일정은 수정할 수 없습니다.");
+      return;
+    }
+
     console.log("Editing todo:", todo);
     setEditingTodo(todo);
     setIsModalOpen(true);
@@ -228,6 +226,12 @@ const HomePage = () => {
     const todo = dailyTodos.find((t) => t.id === id);
     if (!todo) return;
 
+    // 친구의 일정은 토글할 수 없음
+    if (todo.is_own_todo === false) {
+      alert("친구의 일정은 수정할 수 없습니다.");
+      return;
+    }
+
     try {
       await todoApi.updateTodo(id, { completed: !todo.completed });
       await loadAllTodos();
@@ -242,6 +246,15 @@ const HomePage = () => {
     id: string,
     priority: "low" | "medium" | "high"
   ) => {
+    const todo = dailyTodos.find((t) => t.id === id);
+    if (!todo) return;
+
+    // 친구의 일정은 우선순위를 변경할 수 없음
+    if (todo.is_own_todo === false) {
+      alert("친구의 일정은 수정할 수 없습니다.");
+      return;
+    }
+
     try {
       await todoApi.updateTodo(id, { priority });
       await loadAllTodos();
@@ -254,6 +267,15 @@ const HomePage = () => {
 
   const handleDeleteTodo = async (id: string) => {
     console.log("Deleting todo with id:", id);
+
+    const todo = dailyTodos.find((t) => t.id === id);
+    if (!todo) return;
+
+    // 친구의 일정은 삭제할 수 없음
+    if (todo.is_own_todo === false) {
+      alert("친구의 일정은 삭제할 수 없습니다.");
+      return;
+    }
 
     try {
       console.log("Proceeding with delete...");

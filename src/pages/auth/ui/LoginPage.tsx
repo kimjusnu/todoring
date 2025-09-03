@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/shared/config/supabase";
 
 const LoginPage = () => {
@@ -536,6 +537,18 @@ const LoginPage = () => {
                 ? "로그인"
                 : "회원가입"}
             </button>
+
+            {/* 비밀번호 찾기 링크 (로그인 탭에서만 표시) */}
+            {isLogin && (
+              <div className="text-center mt-4">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-blue-600 hover:text-blue-500 font-medium"
+                >
+                  비밀번호를 잊으셨나요?
+                </Link>
+              </div>
+            )}
           </form>
         </div>
 

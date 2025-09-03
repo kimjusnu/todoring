@@ -191,11 +191,8 @@ export const TodoModal = ({
           priority: editingTodo.priority || "medium",
           completed: editingTodo.completed,
         });
-        // 수정 후 모달 새로고침을 위해 잠시 닫았다가 다시 열기
+        // 수정 완료 후 모달 닫기
         onClose();
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent("refreshModal"));
-        }, 100);
       } else if (onSaveMultiple && lines.length > 0) {
         console.log("Saving multiple todos:", lines);
         // 다중 할일 저장 - 각 줄을 개별 할일로 저장
@@ -207,6 +204,8 @@ export const TodoModal = ({
         }));
         console.log("Todos to save:", todosToSave);
         await onSaveMultiple(todosToSave);
+        // 다중 할일 저장 후에는 onClose를 호출하지 않음 (HomePage에서 처리)
+        return;
       } else {
         console.log("No save function available or no lines");
       }
@@ -280,188 +279,301 @@ export const TodoModal = ({
               <h4 className="text-sm font-medium text-gray-700 mb-3">
                 저장된 할 일
               </h4>
-              <div className="space-y-2">
-                {existingTodos.map((todo) => (
-                  <div
-                    key={todo.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
-                  >
-                    <div className="flex items-center space-x-3 flex-1">
-                      {/* 체크박스 */}
-                      <button
-                        type="button"
-                        onClick={() => onToggle?.(todo.id)}
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                          todo.completed
-                            ? "bg-blue-600 border-blue-600"
-                            : "border-gray-300 hover:border-blue-500"
-                        }`}
-                      >
-                        {todo.completed && (
-                          <svg
-                            className="w-3 h-3 text-white"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
+              <div className="space-y-3">
+                {/* 내 할일 섹션 */}
+                {existingTodos.filter((todo) => todo.is_own_todo).length >
+                  0 && (
+                  <div>
+                    <h5 className="text-xs font-medium text-gray-600 mb-2 flex items-center">
+                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-2"></span>
+                      내 할일 (
+                      {existingTodos.filter((todo) => todo.is_own_todo).length}
+                      개)
+                    </h5>
+                    <div className="space-y-2">
+                      {existingTodos
+                        .filter((todo) => todo.is_own_todo)
+                        .map((todo) => (
+                          <div
+                            key={todo.id}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
                           >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        )}
-                      </button>
+                            <div className="flex items-center space-x-3 flex-1">
+                              {/* 체크박스 */}
+                              <button
+                                type="button"
+                                onClick={() => onToggle?.(todo.id)}
+                                className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                  todo.completed
+                                    ? "bg-blue-600 border-blue-600"
+                                    : "border-gray-300 hover:border-blue-500"
+                                }`}
+                              >
+                                {todo.completed && (
+                                  <svg
+                                    className="w-3 h-3 text-white"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                )}
+                              </button>
 
-                      {/* 할일 텍스트 */}
-                      <span
-                        className={`text-sm flex-1 ${
-                          todo.completed ? "line-through opacity-50" : ""
-                        }`}
-                        style={{ color: "var(--text-primary)" }}
-                      >
-                        {todo.title}
-                      </span>
+                              {/* 할일 텍스트 */}
+                              <span
+                                className={`text-sm flex-1 ${
+                                  todo.completed
+                                    ? "line-through opacity-50"
+                                    : ""
+                                }`}
+                                style={{ color: "var(--text-primary)" }}
+                              >
+                                {todo.title}
+                              </span>
 
-                      {/* 우선순위 표시 */}
-                      <div className="relative" data-priority-tooltip>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setShowPriorityTooltip(
-                              showPriorityTooltip === todo.id ? null : todo.id
-                            )
-                          }
-                          className={`px-2 py-1 text-xs rounded-full transition-colors ${
-                            todo.priority === "high"
-                              ? "bg-red-100 text-red-800 hover:bg-red-200"
-                              : todo.priority === "medium"
-                              ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-                              : "bg-green-100 text-green-800 hover:bg-green-200"
-                          }`}
-                        >
-                          {todo.priority === "high"
-                            ? "높음"
-                            : todo.priority === "medium"
-                            ? "보통"
-                            : "낮음"}
-                        </button>
+                              {/* 우선순위 표시 */}
+                              <div className="relative" data-priority-tooltip>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setShowPriorityTooltip(
+                                      showPriorityTooltip === todo.id
+                                        ? null
+                                        : todo.id
+                                    )
+                                  }
+                                  className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                                    todo.priority === "high"
+                                      ? "bg-red-100 text-red-800 hover:bg-red-200"
+                                      : todo.priority === "medium"
+                                      ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                                      : "bg-green-100 text-green-800 hover:bg-green-200"
+                                  }`}
+                                >
+                                  {todo.priority === "high"
+                                    ? "높음"
+                                    : todo.priority === "medium"
+                                    ? "보통"
+                                    : "낮음"}
+                                </button>
 
-                        {/* 우선순위 변경 툴팁 */}
-                        {showPriorityTooltip === todo.id && (
-                          <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[60px]">
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                await onUpdatePriority?.(todo.id, "high");
-                                setShowPriorityTooltip(null);
-                              }}
-                              className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                                {/* 우선순위 변경 툴팁 */}
+                                {showPriorityTooltip === todo.id && (
+                                  <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[60px]">
+                                    <button
+                                      type="button"
+                                      onClick={async () => {
+                                        await onUpdatePriority?.(
+                                          todo.id,
+                                          "high"
+                                        );
+                                        setShowPriorityTooltip(null);
+                                      }}
+                                      className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                                    >
+                                      높음
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={async () => {
+                                        await onUpdatePriority?.(
+                                          todo.id,
+                                          "medium"
+                                        );
+                                        setShowPriorityTooltip(null);
+                                      }}
+                                      className="w-full px-3 py-2 text-left text-sm text-yellow-600 hover:bg-yellow-50"
+                                    >
+                                      보통
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={async () => {
+                                        await onUpdatePriority?.(
+                                          todo.id,
+                                          "low"
+                                        );
+                                        setShowPriorityTooltip(null);
+                                      }}
+                                      className="w-full px-3 py-2 text-left text-sm text-green-600 hover:bg-green-50"
+                                    >
+                                      낮음
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* 수정/삭제 버튼 */}
+                            <div
+                              className="flex items-center space-x-1 ml-3 relative"
+                              data-tooltip
                             >
-                              높음
-                            </button>
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                await onUpdatePriority?.(todo.id, "medium");
-                                setShowPriorityTooltip(null);
-                              }}
-                              className="w-full px-3 py-2 text-left text-sm text-yellow-600 hover:bg-yellow-50"
-                            >
-                              보통
-                            </button>
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                await onUpdatePriority?.(todo.id, "low");
-                                setShowPriorityTooltip(null);
-                              }}
-                              className="w-full px-3 py-2 text-left text-sm text-green-600 hover:bg-green-50"
-                            >
-                              낮음
-                            </button>
+                              {/* 더보기 버튼 */}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setShowTooltip(
+                                    showTooltip === todo.id ? null : todo.id
+                                  )
+                                }
+                                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                              >
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                                </svg>
+                              </button>
+
+                              {/* 툴팁 메뉴 */}
+                              {showTooltip === todo.id && (
+                                <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[80px]">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      console.log(
+                                        "Edit button clicked for todo:",
+                                        todo
+                                      );
+                                      onEdit?.(todo);
+                                      setShowTooltip(null);
+                                    }}
+                                    className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                                  >
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="currentColor"
+                                      viewBox="0 0 20 20"
+                                    >
+                                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                    </svg>
+                                    <span>수정</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      console.log(
+                                        "Delete button clicked for todo id:",
+                                        todo.id
+                                      );
+                                      setShowDeleteConfirm(todo.id);
+                                      setShowTooltip(null);
+                                    }}
+                                    className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                                  >
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="currentColor"
+                                      viewBox="0 0 20 20"
+                                    >
+                                      <path
+                                        fillRule="evenodd"
+                                        d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9zM4 5a2 2 0 012-2h8a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 102 0V8a1 1 0 10-2 0v1zm4 0a1 1 0 102 0V8a1 1 0 10-2 0v1z"
+                                        clipRule="evenodd"
+                                      />
+                                    </svg>
+                                    <span>삭제</span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* 수정/삭제 버튼 */}
-                    <div
-                      className="flex items-center space-x-1 ml-3 relative"
-                      data-tooltip
-                    >
-                      {/* 더보기 버튼 */}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowTooltip(
-                            showTooltip === todo.id ? null : todo.id
-                          )
-                        }
-                        className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                      >
-                        <svg
-                          className="w-4 h-4"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                        </svg>
-                      </button>
-
-                      {/* 툴팁 메뉴 */}
-                      {showTooltip === todo.id && (
-                        <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[80px]">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              console.log(
-                                "Edit button clicked for todo:",
-                                todo
-                              );
-                              onEdit?.(todo);
-                              setShowTooltip(null);
-                            }}
-                            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                            </svg>
-                            <span>수정</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              console.log(
-                                "Delete button clicked for todo id:",
-                                todo.id
-                              );
-                              setShowDeleteConfirm(todo.id);
-                              setShowTooltip(null);
-                            }}
-                            className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9zM4 5a2 2 0 012-2h8a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 102 0V8a1 1 0 10-2 0v1zm4 0a1 1 0 102 0V8a1 1 0 10-2 0v1z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                            <span>삭제</span>
-                          </button>
-                        </div>
-                      )}
+                        ))}
                     </div>
                   </div>
-                ))}
+                )}
+
+                {/* 친구 할일 섹션 */}
+                {existingTodos.filter((todo) => !todo.is_own_todo).length >
+                  0 && (
+                  <div>
+                    <h5 className="text-xs font-medium text-blue-600 mb-2 flex items-center">
+                      <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></span>
+                      {
+                        existingTodos.filter((todo) => !todo.is_own_todo)[0]
+                          ?.owner_name
+                      }
+                      의 할일 (
+                      {existingTodos.filter((todo) => !todo.is_own_todo).length}
+                      개)
+                    </h5>
+                    <div className="space-y-2">
+                      {existingTodos
+                        .filter((todo) => !todo.is_own_todo)
+                        .map((todo) => (
+                          <div
+                            key={todo.id}
+                            className="flex items-center justify-between p-3 bg-blue-50 rounded-md border border-blue-200"
+                          >
+                            <div className="flex items-center space-x-3 flex-1">
+                              {/* 체크박스 (비활성화) */}
+                              <div className="w-5 h-5 rounded border-2 flex items-center justify-center bg-gray-100 border-gray-300 cursor-not-allowed">
+                                <svg
+                                  className="w-3 h-3 text-gray-400"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              </div>
+
+                              {/* 할일 텍스트 */}
+                              <span
+                                className={`text-sm flex-1 text-blue-800 ${
+                                  todo.completed
+                                    ? "line-through opacity-50"
+                                    : ""
+                                }`}
+                              >
+                                {todo.title}
+                              </span>
+
+                              {/* 우선순위 표시 (읽기 전용) */}
+                              <div
+                                className={`px-2 py-1 text-xs rounded-full ${
+                                  todo.priority === "high"
+                                    ? "bg-red-100 text-red-800"
+                                    : todo.priority === "medium"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-green-100 text-green-800"
+                                }`}
+                              >
+                                {todo.priority === "high"
+                                  ? "높음"
+                                  : todo.priority === "medium"
+                                  ? "보통"
+                                  : "낮음"}
+                              </div>
+
+                              {/* 친구 이름 태그 */}
+                              <span className="px-2 py-1 text-xs rounded-full bg-blue-200 text-blue-800">
+                                {todo.owner_name}
+                              </span>
+                            </div>
+
+                            {/* 읽기 전용 표시 */}
+                            <div className="ml-3">
+                              <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                                읽기 전용
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

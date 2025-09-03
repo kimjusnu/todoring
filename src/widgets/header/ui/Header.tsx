@@ -5,12 +5,15 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { supabase } from "@/shared/config/supabase";
 import { useToast } from "@/shared/lib/ToastContext";
+import { ConnectionManager, SharingSettingsModal } from "@/features/connection";
 import type { User } from "@supabase/supabase-js";
 
 export const Header = () => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isConnectionManagerOpen, setIsConnectionManagerOpen] = useState(false);
+  const [isSharingSettingsOpen, setIsSharingSettingsOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { addToast } = useToast();
@@ -92,27 +95,54 @@ export const Header = () => {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b">
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <Link
-            href="/"
-            className="text-xl font-bold text-gray-900 hover:text-gray-700"
-          >
-            투두링 📝
+        <div className="flex justify-between items-center h-14">
+          <Link href="/" className="flex items-center space-x-2">
+            <div className="w-7 h-7 bg-blue-600 rounded-md flex items-center justify-center">
+              <svg
+                className="w-4 h-4 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+            <span className="text-lg font-bold text-gray-900">투두링</span>
           </Link>
 
-          <nav className="flex items-center space-x-4">
+          <nav className="flex items-center space-x-2">
             {loading ? (
               <div className="text-sm text-gray-500">로딩 중...</div>
             ) : user ? (
               <>
-                <span className="text-sm text-gray-600">
+                <button
+                  onClick={() => setIsConnectionManagerOpen(true)}
+                  className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                  title="친구와 일정 공유하기"
+                >
+                  공유
+                </button>
+                <button
+                  onClick={() => setIsSharingSettingsOpen(true)}
+                  className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                  title="공유 설정 관리"
+                >
+                  설정
+                </button>
+                <div className="h-4 w-px bg-gray-300 mx-2"></div>
+                <span className="text-sm font-medium text-gray-900">
                   {profile?.full_name || user.email}
                 </span>
                 <button
                   onClick={handleSignOut}
-                  className="bg-red-600 text-white px-4 py-2 rounded-md text-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                  className="px-3 py-1.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
                 >
                   로그아웃
                 </button>
@@ -120,7 +150,7 @@ export const Header = () => {
             ) : (
               <Link
                 href="/login"
-                className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
               >
                 로그인
               </Link>
@@ -128,6 +158,18 @@ export const Header = () => {
           </nav>
         </div>
       </div>
+
+      {/* 연결 관리 모달 */}
+      <ConnectionManager
+        isOpen={isConnectionManagerOpen}
+        onClose={() => setIsConnectionManagerOpen(false)}
+      />
+
+      {/* 공유 설정 모달 */}
+      <SharingSettingsModal
+        isOpen={isSharingSettingsOpen}
+        onClose={() => setIsSharingSettingsOpen(false)}
+      />
     </header>
   );
 };
