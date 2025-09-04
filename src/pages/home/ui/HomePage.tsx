@@ -123,17 +123,55 @@ const HomePage = () => {
     }
   };
 
-  // 모든 Todo 데이터 로드
+  const loadFriendsTodos = async () => {
+    try {
+      const data = await todoApi.getFriendsTodos();
+      console.log("Friends todos loaded:", data);
+      // 친구 할일을 별도로 저장 (기존 할일과 섞지 않음)
+      setTodos((prevTodos) => {
+        // 기존 친구 할일 제거 후 새로 추가
+        const ownTodos = prevTodos.filter((todo) => todo.is_own_todo !== false);
+        return [...ownTodos, ...data];
+      });
+    } catch (error) {
+      console.error("Failed to load friends todos:", error);
+    }
+  };
+
+  const loadFriendsTodosByDate = async (date: Date) => {
+    try {
+      const dateString = formatDateToLocal(date);
+      const allFriendsTodos = await todoApi.getFriendsTodos();
+      // 해당 날짜의 친구 할일만 필터링
+      const friendsTodosForDate = allFriendsTodos.filter(
+        (todo) => todo.due_date === dateString
+      );
+      console.log("Friends todos for date:", friendsTodosForDate);
+      // 친구 할일을 일일 할일 목록에 추가
+      setDailyTodos((prevTodos) => {
+        // 기존 친구 할일 제거 후 새로 추가
+        const ownTodos = prevTodos.filter((todo) => todo.is_own_todo !== false);
+        return [...ownTodos, ...friendsTodosForDate];
+      });
+    } catch (error) {
+      console.error("Failed to load friends todos by date:", error);
+    }
+  };
+
+
+  // 모든 Todo 데이터 로드 (본인 + 친구)
   useEffect(() => {
     if (user) {
       loadAllTodos();
+      loadFriendsTodos();
     }
   }, [user]);
 
-  // 선택된 날짜의 Todo 로드
+  // 선택된 날짜의 Todo 로드 (본인 + 친구)
   useEffect(() => {
     if (user) {
       loadDailyTodos(selectedDate);
+      loadFriendsTodosByDate(selectedDate);
     }
   }, [user, selectedDate]);
 
@@ -330,6 +368,7 @@ const HomePage = () => {
             />
           </div>
         </div>
+
 
         {/* 전체 통계 */}
         <div className="mt-8 bg-white rounded-lg shadow-md p-6">

@@ -24,26 +24,142 @@ export interface Todo {
 
 export const todoApi = {
   async getTodos(): Promise<Todo[]> {
-    const { data, error } = await supabase.rpc("get_all_todos");
+    // 현재 사용자 ID 가져오기
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from("todos")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true });
 
     if (error) throw error;
-    return data || [];
+
+    // 데이터 변환
+    return (data || []).map((todo) => ({
+      ...todo,
+      owner_name: "내 할일",
+      owner_email: "",
+      is_own_todo: true,
+    }));
   },
 
   async getTodosByDate(date: string): Promise<Todo[]> {
-    const { data, error } = await supabase.rpc("get_todos_by_date", {
-      target_date: date,
-    });
+    // 현재 사용자 ID 가져오기
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from("todos")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("due_date", date)
+      .order("created_at", { ascending: true });
 
     if (error) throw error;
-    return data || [];
+
+    // 데이터 변환
+    return (data || []).map((todo) => ({
+      ...todo,
+      owner_name: "내 할일",
+      owner_email: "",
+      is_own_todo: true,
+    }));
   },
 
   async getFriendsTodos(): Promise<Todo[]> {
-    const { data, error } = await supabase.rpc("get_friends_todos");
+    // 현재 사용자 ID 가져오기
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
 
-    if (error) throw error;
-    return data || [];
+    try {
+      // 친구 연결 테이블에서 친구들의 할일 가져오기
+      const { data: connections, error: connectionError } = await supabase
+        .from("user_connections")
+        .select("connected_user_id")
+        .eq("user_id", user.id);
+
+      if (connectionError || !connections?.length) {
+        return [];
+      }
+
+      const friendIds = connections.map((conn) => conn.connected_user_id);
+
+      const { data, error } = await supabase
+        .from("todos")
+        .select("*")
+        .in("user_id", friendIds)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        return [];
+      }
+
+      // 데이터 변환
+      const friendsTodos = (data || []).map((todo) => ({
+        ...todo,
+        owner_name: "친구",
+        owner_email: "",
+        is_own_todo: false,
+      }));
+
+      return friendsTodos;
+    } catch (error) {
+      console.error("Error in getFriendsTodos:", error);
+      return [];
+    }
+  },
+
+  async getFriendsTodosByDate(date: string): Promise<Todo[]> {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    try {
+      // 친구 연결 테이블에서 친구들의 할일 가져오기
+      const { data: connections, error: connectionError } = await supabase
+        .from("user_connections")
+        .select("connected_user_id")
+        .eq("user_id", user.id);
+
+      if (connectionError || !connections?.length) {
+        return [];
+      }
+
+      const friendIds = connections.map((conn) => conn.connected_user_id);
+
+      const { data, error } = await supabase
+        .from("todos")
+        .select("*")
+        .in("user_id", friendIds)
+        .eq("due_date", date)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        return [];
+      }
+
+      // 데이터 변환
+      const friendsTodos = (data || []).map((todo) => ({
+        ...todo,
+        owner_name: "친구",
+        owner_email: "",
+        is_own_todo: false,
+      }));
+
+      return friendsTodos;
+    } catch (error) {
+      console.error("Error in getFriendsTodosByDate:", error);
+      return [];
+    }
   },
 
   async createTodo(todoData: {

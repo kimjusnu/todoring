@@ -74,16 +74,29 @@ const LoginPage = () => {
 
     try {
       if (isLogin) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+        console.log("로그인 시도:", { email, password: "***" });
 
-        if (error) throw error;
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
 
-        // 로그인 성공 시 실패 횟수 초기화
-        setFailedAttempts(0);
-        router.push("/");
+          console.log("로그인 결과:", { data, error });
+
+          if (error) {
+            console.error("로그인 에러:", error);
+            throw error;
+          }
+
+          // 로그인 성공 시 실패 횟수 초기화
+          setFailedAttempts(0);
+          console.log("로그인 성공, 홈으로 이동");
+          router.push("/");
+        } catch (loginError) {
+          console.error("로그인 처리 중 에러:", loginError);
+          throw loginError;
+        }
       } else {
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -96,6 +109,9 @@ const LoginPage = () => {
         });
 
         if (error) throw error;
+
+        // 프로필 생성은 나중에 처리 (RLS 문제로 인해 임시 제거)
+        console.log("회원가입 성공:", data.user?.email);
 
         // 회원가입 결과에 따라 다른 메시지 표시
         if (data?.user && !data?.session) {
